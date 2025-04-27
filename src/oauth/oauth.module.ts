@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { UserService } from './user.service';
-import { UserController, UserMeController } from './user.controller';
+import { OauthService } from './oauth.service';
+import { OauthController } from './oauth.controller';
 import { MongooseModule } from '@nestjs/mongoose';
-import { User, userSchemaFactory } from './user.schema';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { User, userSchemaFactory } from 'src/user/user.schema';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       },
     ]),
   ],
-  controllers: [UserController, UserMeController],
-  providers: [UserService],
+  controllers: [OauthController],
+  providers: [OauthService, GoogleStrategy],
 })
-export class UserModule {}
+export class OauthModule {}
