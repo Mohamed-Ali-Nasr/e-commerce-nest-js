@@ -33,6 +33,7 @@ export class OauthService {
     message: string;
     data: Partial<User>;
     access_token: string;
+    refresh_token: string;
   }> {
     // business logic
     const user = await this.userModel.findOne({ email: userData.email });
@@ -55,6 +56,15 @@ export class OauthService {
         secret: this.configService.get<string>('JWT_SIGNIN'),
       });
 
+      // create refresh token
+      const refresh_token = await this.jwtService.signAsync(
+        { ...payload, countEX: 5 },
+        {
+          secret: this.configService.get<string>('JWT_SECRET_REFRESHTOKEN'),
+          expiresIn: '7d',
+        },
+      );
+
       await newUser.save();
 
       return {
@@ -62,6 +72,7 @@ export class OauthService {
         message: 'User created successfully',
         data: newUser,
         access_token: token,
+        refresh_token,
       };
     }
 
@@ -76,11 +87,21 @@ export class OauthService {
       secret: this.configService.get<string>('JWT_SIGNIN'),
     });
 
+    // create refresh token
+    const refresh_token = await this.jwtService.signAsync(
+      { ...payload, countEX: 5 },
+      {
+        secret: this.configService.get<string>('JWT_SECRET_REFRESHTOKEN'),
+        expiresIn: '7d',
+      },
+    );
+
     return {
       status: 200,
       message: 'User logged in successfully',
       data: user,
       access_token: token,
+      refresh_token,
     };
   }
 }
