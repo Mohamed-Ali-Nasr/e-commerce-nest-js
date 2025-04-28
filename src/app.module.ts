@@ -24,7 +24,7 @@ import { OauthModule } from './oauth/oauth.module';
       useFactory: (configService: ConfigService) => ({
         global: true,
         secret: configService.get<string>('JWT_SIGNIN'),
-        signOptions: { expiresIn: '2d' },
+        signOptions: { expiresIn: '1d' },
       }),
       inject: [ConfigService],
       global: true,

@@ -37,6 +37,7 @@ export class SignUpDto {
 }
 
 export class VerifyEmailDto {
+  @IsString({ message: 'token must be a string' })
   @IsNotEmpty({ message: 'token must not be empty' })
   token: string;
 }
@@ -100,4 +101,10 @@ export class ResetPasswordDto {
     },
   )
   newPassword: string;
+}
+
+export class RefreshTokenDto {
+  @IsString({ message: 'refresh_token must be a string' })
+  @IsNotEmpty({ message: 'refresh_token must not be empty' })
+  refresh_token: string;
 }

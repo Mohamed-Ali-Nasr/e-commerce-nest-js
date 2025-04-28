@@ -2,6 +2,7 @@ import { Controller, Post, Body, Req, Get, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   ForgetPasswordDto,
+  RefreshTokenDto,
   ResetPasswordDto,
   SignInDto,
   SignUpDto,
@@ -72,5 +73,15 @@ export class AuthController {
   @Post('reset-password')
   resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  /**
+   *  @docs    Any User Can loged can refresh token
+   *  @Route   POST /api/v1/auth/refresh-token
+   *  @access  public
+   */
+  @Post('refresh-token')
+  refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refreshToken(refreshTokenDto);
   }
 }

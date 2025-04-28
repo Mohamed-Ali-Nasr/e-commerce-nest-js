@@ -10,7 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from 'src/user/user.schema';
-import { ResetPasswordDto, SignInDto, SignUpDto } from './dto';
+import { RefreshTokenDto, ResetPasswordDto, SignInDto, SignUpDto } from './dto';
 import { UserStatus, Role } from 'src/user/enum';
 import { Request } from 'express';
 import * as bcrypt from 'bcrypt';
@@ -178,6 +178,7 @@ export class AuthService {
     message: string;
     data: Partial<User>;
     access_token: string;
+    refresh_token: string;
   }> {
     // Find User By Email =>
     const user = await this.userModel
@@ -275,14 +276,24 @@ export class AuthService {
       email: user.email,
       role: user.role,
     };
-    const token = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('JWT_SIGNIN'),
-    });
 
     // make the status active if the user is inactive
     if (user.status === UserStatus.Inactive || !user.status) {
       user.status = UserStatus.Active;
     }
+
+    const token = await this.jwtService.signAsync(payload, {
+      secret: this.configService.get<string>('JWT_SIGNIN'),
+    });
+
+    // Generate Refresh Token For Existing User =>
+    const refresh_token = await this.jwtService.signAsync(
+      { ...payload, countEX: 5 },
+      {
+        secret: this.configService.get<string>('JWT_SECRET_REFRESHTOKEN'),
+        expiresIn: '7d', // 7 days
+      },
+    );
 
     await user.save();
 
@@ -291,6 +302,7 @@ export class AuthService {
       message: 'User logged in successfully',
       data: user,
       access_token: token,
+      refresh_token,
     };
   }
 
@@ -423,5 +435,55 @@ export class AuthService {
       status: 200,
       message: 'Password changed successfully, go to login',
     };
+  }
+
+  async refreshToken(refreshTokenDto: RefreshTokenDto) {
+    try {
+      const payload = await this.jwtService.verifyAsync(
+        refreshTokenDto.refresh_token,
+        {
+          secret: this.configService.get<string>('JWT_SECRET_REFRESHTOKEN'),
+        },
+      );
+
+      if (!payload || payload.countEX <= 0) {
+        throw new UnauthorizedException(
+          'Invalid refresh token, please go to login again',
+        );
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { exp, ...newPayload } = payload;
+
+      const newPayoadForAccessToken = {
+        _id: newPayload._id,
+        email: newPayload.email,
+        role: newPayload.role,
+      };
+
+      // create access token
+      const access_token = await this.jwtService.signAsync(
+        newPayoadForAccessToken,
+        { secret: this.configService.get<string>('JWT_SIGNIN') },
+      );
+
+      // create refresh token
+      const refresh_token = await this.jwtService.signAsync(
+        { ...newPayload, countEX: payload.countEX - 1 },
+        {
+          secret: this.configService.get<string>('JWT_SECRET_REFRESHTOKEN'),
+          expiresIn: '7d',
+        },
+      );
+
+      return {
+        status: 200,
+        message: 'Refresh Access token successfully',
+        access_token,
+        refresh_token,
+      };
+    } catch (error) {
+      throw new HttpException(`Failed to refresh token: ${error.message}`, 401);
+    }
   }
 }
