@@ -5,7 +5,6 @@ import {
   Body,
   Param,
   Delete,
-  ValidationPipe,
   UseGuards,
   Query,
   Put,
@@ -37,7 +36,7 @@ export class UserController {
   @Roles(Role.Admin)
   @UseGuards(AuthGuard)
   create(
-    @Body(ValidationPipe)
+    @Body()
     createUserDto: CreateUserDto,
   ) {
     return this.userService.create(createUserDto);
@@ -60,9 +59,9 @@ export class UserController {
    *  @Route   GET /api/v1/user/:id
    *  @access  Private [admin]
    */
+  @Get(':id')
   @Roles(Role.Admin)
   @UseGuards(AuthGuard)
-  @Get(':id')
   findOne(@Param() params: ObjectIdDto) {
     return this.userService.findOne(params.id);
   }
@@ -72,12 +71,12 @@ export class UserController {
    *  @Route   PUT /api/v1/user/:id
    *  @access  Private [admin]
    */
+  @Put(':id')
   @Roles(Role.Admin)
   @UseGuards(AuthGuard)
-  @Put(':id')
   update(
     @Param() params: ObjectIdDto,
-    @Body(new ValidationPipe({ forbidNonWhitelisted: true }))
+    @Body()
     updateUserDto: UpdateUserDto,
   ) {
     return this.userService.update(params.id, updateUserDto);
@@ -88,9 +87,9 @@ export class UserController {
    *  @Route   DELETE /api/v1/user/:id
    *  @access  Private [admin]
    */
+  @Delete(':id')
   @Roles(Role.Admin)
   @UseGuards(AuthGuard)
-  @Delete(':id')
   remove(@Param() params: ObjectIdDto) {
     return this.userService.remove(params.id);
   }
@@ -123,7 +122,7 @@ export class UserMeController {
   @UseGuards(AuthGuard)
   updateMe(
     @Req() req: Request,
-    @Body(new ValidationPipe({ forbidNonWhitelisted: true }))
+    @Body()
     updateUserDto: UpdateUserDto,
   ) {
     return this.userService.updateMe(req, updateUserDto);
