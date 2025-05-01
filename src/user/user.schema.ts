@@ -92,6 +92,29 @@ export class User {
 
 const UserSchema = SchemaFactory.createForClass(User);
 
+// Reusable function for password hashing with try-catch
+const hashPassword = async (
+  doc: User,
+  configService: ConfigService,
+  saltRounds: number = 10,
+): Promise<void> => {
+  try {
+    // Ensure password exists
+    if (!doc.password) return;
+
+    // Skip if password is already hashed
+    const bcryptHashPrefix = configService.get<string>('BCRYPT_HASH', '$2b$');
+
+    if (doc.password.startsWith(bcryptHashPrefix)) return;
+
+    // Hash the password
+    const salt = await bcrypt.genSalt(saltRounds);
+    doc.password = await bcrypt.hash(doc.password, salt);
+  } catch (error) {
+    throw new Error(`Failed to hash password: ${error.message}`);
+  }
+};
+
 export const userSchemaFactory = (configService: ConfigService) => {
   const saltRounds = parseInt(
     configService.get<string>('SALT_ROUNDS', '12'),
@@ -110,45 +133,23 @@ export const userSchemaFactory = (configService: ConfigService) => {
 
   // Apply document middleware to hash password before save
   UserSchema.pre('save', async function (next) {
+    // Skip if password is not modified
     if (!this.isModified('password')) return next();
 
-    try {
-      if (
-        !this.password.startsWith(
-          configService.get<string>('BCRYPT_HASH', '$2b$'),
-        )
-      ) {
-        const salt = await bcrypt.genSalt(saltRounds);
-        this.password = await bcrypt.hash(this.password, salt);
-      }
+    await hashPassword(this, configService, saltRounds);
 
-      next();
-    } catch (error) {
-      next(error as Error);
-    }
+    next();
   });
 
   // Apply document middleware to hash password before update
   UserSchema.pre('findOneAndUpdate', async function (next) {
     const update = this.getUpdate() as User;
-
+    // Skip if password is not in the update
     if (!update.password) return next();
 
-    try {
-      if (
-        !update.password.startsWith(
-          configService.get<string>('BCRYPT_HASH', '$2b$'),
-        )
-      ) {
-        const salt = await bcrypt.genSalt(saltRounds);
-        update.password = await bcrypt.hash(update.password, salt);
-        this.setUpdate(update);
-      }
+    await hashPassword(update, configService, saltRounds);
 
-      next();
-    } catch (error) {
-      next(error as Error);
-    }
+    next();
   });
 
   return UserSchema;
