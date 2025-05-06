@@ -5,14 +5,21 @@ import {
 } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Category, categoryDocument } from './category.schema';
+import { Category, CategoryDocument } from './category.schema';
 import { Model } from 'mongoose';
 import { Request } from 'express';
+import {
+  SubCategory,
+  SubCategoryDocument,
+} from 'src/sub-category/sub-category.schema';
 
 @Injectable()
 export class CategoryService {
   constructor(
-    @InjectModel(Category.name) private categoryModel: Model<categoryDocument>,
+    @InjectModel(Category.name)
+    private categoryModel: Model<CategoryDocument>,
+    @InjectModel(SubCategory.name)
+    private subCategoryModel: Model<SubCategoryDocument>,
   ) {}
 
   async create(
@@ -32,12 +39,15 @@ export class CategoryService {
       throw new HttpException('Category already exist', 400);
     }
 
-    const newCategory = await this.categoryModel.create({
-      ...createCategoryDto,
-      createdBy: payload._id,
-    });
+    const newCategory = await (
+      await this.categoryModel.create({
+        ...createCategoryDto,
+        createdBy: payload._id,
+      })
+    ).populate('createdBy', '_id name email role');
 
     await newCategory.save();
+
     return {
       status: 200,
       message: 'Category created successfully',
@@ -70,7 +80,9 @@ export class CategoryService {
         .sort({ createdAt: sortOrder })
         .skip(skip)
         .limit(limit)
+        .select('-__v')
         .exec(),
+
       this.categoryModel.countDocuments(filter).exec(),
     ]);
 
@@ -88,6 +100,7 @@ export class CategoryService {
     id: string,
   ): Promise<{ status: number; message: string; data: Category }> {
     const category = await this.categoryModel.findById(id).select('-__v');
+
     if (!category) {
       throw new NotFoundException('Category not found');
     }
@@ -100,17 +113,28 @@ export class CategoryService {
   }
 
   async update(
+    req: Request,
     id: string,
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<{ status: number; message: string; data: Category }> {
+    const payload = req['user'] as { _id: string };
+
     const category = await this.categoryModel.findById(id);
     if (!category) {
       throw new NotFoundException('Category not found');
     }
 
     const updatedCategory = await this.categoryModel
-      .findByIdAndUpdate(id, updateCategoryDto, { new: true })
-      .select('-__v');
+      .findByIdAndUpdate(
+        id,
+        { ...updateCategoryDto, updatedBy: payload._id },
+        { new: true },
+      )
+      .select('-__v')
+      .populate([
+        { path: 'updatedBy', select: '_id name email role' },
+        { path: 'createdBy', select: '_id name email role' },
+      ]);
 
     return {
       status: 200,
@@ -119,12 +143,19 @@ export class CategoryService {
     };
   }
 
-  async remove(id: string): Promise<{ status: number; message: string }> {
-    const category = await this.categoryModel.findById(id);
+  async remove(
+    categoryId: string,
+  ): Promise<{ status: number; message: string }> {
+    const category = await this.categoryModel.findById(categoryId);
+
     if (!category) {
       throw new NotFoundException('Category not found');
     }
-    await this.categoryModel.findByIdAndDelete(id);
+
+    await Promise.all([
+      this.categoryModel.deleteOne({ _id: categoryId }).exec(),
+      this.subCategoryModel.deleteMany({ category: categoryId }).exec(),
+    ]);
 
     return {
       status: 200,

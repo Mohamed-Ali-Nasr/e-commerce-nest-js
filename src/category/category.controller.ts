@@ -67,10 +67,11 @@ export class CategoryController {
   @Roles(Role.Admin)
   @UseGuards(AuthGuard)
   update(
+    @Req() req: Request,
     @Param() params: ObjectIdDto,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    return this.categoryService.update(params.id, updateCategoryDto);
+    return this.categoryService.update(req, params.id, updateCategoryDto);
   }
 
   /**

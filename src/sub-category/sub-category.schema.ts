@@ -1,12 +1,13 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model, Types } from 'mongoose';
 import slugify from 'slugify';
+import { Category } from 'src/category/category.schema';
 import { User } from 'src/user/user.schema';
 
-export type CategoryDocument = HydratedDocument<Category>;
+export type SubCategoryDocument = HydratedDocument<SubCategory>;
 
 @Schema({ timestamps: true })
-export class Category {
+export class SubCategory {
   @Prop({
     type: String,
     required: true,
@@ -16,11 +17,15 @@ export class Category {
   })
   name: string;
 
-  @Prop({ type: String })
-  image: string;
-
   @Prop({ type: String, unique: true })
   slug: string;
+
+  @Prop({
+    type: Types.ObjectId,
+    ref: Category.name,
+    required: true,
+  })
+  category: string;
 
   @Prop({ type: Types.ObjectId, ref: User.name, required: true })
   createdBy: Types.ObjectId;
@@ -29,12 +34,12 @@ export class Category {
   updatedBy: Types.ObjectId;
 }
 
-export const CategorySchema = SchemaFactory.createForClass(Category);
+export const subCategorySchema = SchemaFactory.createForClass(SubCategory);
 
 // Reusable logic for name capitalization and slug generation =>
 const processNameAndSlug = async (
-  doc: Category,
-  model: Model<Category>,
+  doc: SubCategory,
+  model: Model<SubCategory>,
 ): Promise<void> => {
   try {
     if (!doc.name) return;
@@ -60,18 +65,18 @@ const processNameAndSlug = async (
 };
 
 // Pre-save hook for creating slug and capitalizing name =>
-CategorySchema.pre<CategoryDocument>('save', async function (next) {
+subCategorySchema.pre<SubCategoryDocument>('save', async function (next) {
   // Skip if name is not modified
   if (!this.isModified('name')) return next();
 
-  await processNameAndSlug(this, this.constructor as Model<Category>);
+  await processNameAndSlug(this, this.constructor as Model<SubCategory>);
 
   next();
 });
 
 // Pre-findByIdAndUpdate hook
-CategorySchema.pre('findOneAndUpdate', async function (next) {
-  const update = this.getUpdate() as Category;
+subCategorySchema.pre('findOneAndUpdate', async function (next) {
+  const update = this.getUpdate() as SubCategory;
   // Skip if name is not in the update
   if (!update.name) return next();
 

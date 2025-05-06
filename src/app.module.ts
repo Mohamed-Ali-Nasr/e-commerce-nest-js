@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { OauthModule } from './oauth/oauth.module';
 import { CategoryModule } from './category/category.module';
+import { SubCategoryModule } from './sub-category/sub-category.module';
 
 @Module({
   imports: [
@@ -59,6 +60,8 @@ import { CategoryModule } from './category/category.module';
     }),
 
     CategoryModule,
+
+    SubCategoryModule,
   ],
 })
 export class AppModule {}
