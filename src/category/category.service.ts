@@ -12,14 +12,18 @@ import {
   SubCategory,
   SubCategoryDocument,
 } from 'src/sub-category/sub-category.schema';
+import { PushNotificationService } from 'src/push-notification/push-notification.service';
 
 @Injectable()
 export class CategoryService {
   constructor(
     @InjectModel(Category.name)
     private categoryModel: Model<CategoryDocument>,
+
     @InjectModel(SubCategory.name)
     private subCategoryModel: Model<SubCategoryDocument>,
+
+    private pushNotificationService: PushNotificationService,
   ) {}
 
   async create(
@@ -46,7 +50,21 @@ export class CategoryService {
       })
     ).populate('createdBy', '_id name email role');
 
-    await newCategory.save();
+    const savedCategory = await newCategory.save();
+
+    // Send notification to all users
+    try {
+      await this.pushNotificationService.sendNotificationToAll(
+        'New Category Added!',
+        `Check out our new category: ${savedCategory.name}`,
+      );
+      console.log(`Notification sent for category: ${savedCategory.name}`);
+    } catch (error) {
+      console.error(
+        `Failed to send notification for category ${savedCategory.name}:`,
+        error,
+      );
+    }
 
     return {
       status: 200,

@@ -10,14 +10,18 @@ import { Category, CategoryDocument } from 'src/category/category.schema';
 import { Model } from 'mongoose';
 import { SubCategory, SubCategoryDocument } from './sub-category.schema';
 import { Request } from 'express';
+import { PushNotificationService } from 'src/push-notification/push-notification.service';
 
 @Injectable()
 export class SubCategoryService {
   constructor(
     @InjectModel(SubCategory.name)
     private subCategoryModel: Model<SubCategoryDocument>,
+
     @InjectModel(Category.name)
     private categoryModel: Model<CategoryDocument>,
+
+    private pushNotificationService: PushNotificationService,
   ) {}
 
   async create(
@@ -57,7 +61,13 @@ export class SubCategoryService {
       { path: 'createdBy', select: '_id name email role' },
     ]);
 
-    await newSubCategory.save();
+    const savedSubCategory = await newSubCategory.save();
+
+    // Send notification to all users
+    await this.pushNotificationService.sendNotificationToAll(
+      'New Sub Category Added!',
+      `Check out our new sub category: ${savedSubCategory.name}`,
+    );
 
     return {
       status: 200,

@@ -127,7 +127,7 @@ export class AuthService {
     return {
       status: 200,
       message:
-        'Signup successful! Please check your email to verify your account.',
+        'Signup successful! Please check your email to verify your account. then login to your account.',
     };
   }
 

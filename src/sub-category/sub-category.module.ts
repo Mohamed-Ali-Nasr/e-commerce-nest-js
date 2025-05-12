@@ -4,6 +4,7 @@ import { SubCategoryController } from './sub-category.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SubCategory, subCategorySchema } from './sub-category.schema';
 import { Category, CategorySchema } from 'src/category/category.schema';
+import { PushNotificationModule } from 'src/push-notification/push-notification.module';
 
 @Module({
   imports: [
@@ -11,6 +12,8 @@ import { Category, CategorySchema } from 'src/category/category.schema';
       { name: SubCategory.name, schema: subCategorySchema },
       { name: Category.name, schema: CategorySchema },
     ]),
+
+    PushNotificationModule,
   ],
   controllers: [SubCategoryController],
   providers: [SubCategoryService],
