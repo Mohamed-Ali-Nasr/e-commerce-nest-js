@@ -1,8 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Model, Types } from 'mongoose';
+import { HydratedDocument, Model, Schema as MongooseSchema } from 'mongoose';
 import slugify from 'slugify';
 import { Category } from 'src/category/category.schema';
-import { User } from 'src/user/user.schema';
 
 export type SubCategoryDocument = HydratedDocument<SubCategory>;
 
@@ -21,20 +20,14 @@ export class SubCategory {
   slug: string;
 
   @Prop({
-    type: Types.ObjectId,
+    type: MongooseSchema.Types.ObjectId,
     ref: Category.name,
     required: true,
   })
-  category: string;
-
-  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
-  createdBy: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: User.name })
-  updatedBy: Types.ObjectId;
+  category: MongooseSchema.Types.ObjectId;
 }
 
-export const subCategorySchema = SchemaFactory.createForClass(SubCategory);
+export const SubCategorySchema = SchemaFactory.createForClass(SubCategory);
 
 // Reusable logic for name capitalization and slug generation =>
 const processNameAndSlug = async (
@@ -65,7 +58,7 @@ const processNameAndSlug = async (
 };
 
 // Pre-save hook for creating slug and capitalizing name =>
-subCategorySchema.pre<SubCategoryDocument>('save', async function (next) {
+SubCategorySchema.pre<SubCategoryDocument>('save', async function (next) {
   // Skip if name is not modified
   if (!this.isModified('name')) return next();
 
@@ -75,7 +68,7 @@ subCategorySchema.pre<SubCategoryDocument>('save', async function (next) {
 });
 
 // Pre-findByIdAndUpdate hook
-subCategorySchema.pre('findOneAndUpdate', async function (next) {
+SubCategorySchema.pre('findOneAndUpdate', async function (next) {
   const update = this.getUpdate() as SubCategory;
   // Skip if name is not in the update
   if (!update.name) return next();

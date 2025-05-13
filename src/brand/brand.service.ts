@@ -2,6 +2,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { BrandPaginationDto, CreateBrandDto } from './dto/create-brand.dto';
@@ -10,12 +11,17 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Brand, BrandDocument } from './brand.schema';
 import { Model } from 'mongoose';
 import { PushNotificationService } from 'src/push-notification/push-notification.service';
+import { AuditLog, AuditLogDocument } from 'src/audit-log/audit-log.schema';
+import { Action, EntityTye } from 'src/audit-log/enum';
 
 @Injectable()
 export class BrandService {
   constructor(
     @InjectModel(Brand.name)
     private brandModel: Model<BrandDocument>,
+
+    @InjectModel(AuditLog.name)
+    private auditLogModel: Model<AuditLogDocument>,
 
     private pushNotificationService: PushNotificationService,
   ) {}
@@ -37,12 +43,7 @@ export class BrandService {
       throw new HttpException('Brand already exist', 400);
     }
 
-    const newBrnad = await (
-      await this.brandModel.create({
-        ...createBrandDto,
-        createdBy: payload._id,
-      })
-    ).populate('createdBy', '_id name email role');
+    const newBrnad = await this.brandModel.create(createBrandDto);
 
     const savedBrand = await newBrnad.save();
 
@@ -59,6 +60,15 @@ export class BrandService {
         error,
       );
     }
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.Brand,
+      entityId: savedBrand._id,
+      action: Action.Create,
+      performedBy: payload._id,
+      data: savedBrand.toObject(),
+    });
 
     return {
       status: 200,
@@ -167,11 +177,20 @@ export class BrandService {
         { ...updateBrandDto, updatedBy: payload._id },
         { new: true },
       )
-      .select('-__v')
-      .populate([
-        { path: 'updatedBy', select: '_id name email role' },
-        { path: 'createdBy', select: '_id name email role' },
-      ]);
+      .select('-__v');
+
+    if (!updatedBrand) {
+      throw new InternalServerErrorException('Failed to update category');
+    }
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.Brand,
+      entityId: id,
+      action: Action.Update,
+      performedBy: payload._id,
+      data: updatedBrand.toObject(),
+    });
 
     return {
       status: 200,
@@ -180,7 +199,12 @@ export class BrandService {
     };
   }
 
-  async remove(id: string): Promise<{ status: number; message: string }> {
+  async remove(
+    req: Request,
+    id: string,
+  ): Promise<{ status: number; message: string }> {
+    const payload = req['user'] as { _id: string };
+
     const brand = await this.brandModel.findById(id);
 
     if (!brand) {
@@ -188,6 +212,15 @@ export class BrandService {
     }
 
     await this.brandModel.findByIdAndDelete(id);
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.Brand,
+      entityId: id,
+      action: Action.Delete,
+      performedBy: payload._id,
+      data: brand.toObject(),
+    });
 
     return {
       status: 200,

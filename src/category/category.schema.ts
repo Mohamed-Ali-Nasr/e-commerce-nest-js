@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Model, Types } from 'mongoose';
+import { HydratedDocument, Model } from 'mongoose';
 import slugify from 'slugify';
-import { User } from 'src/user/user.schema';
 
 export type CategoryDocument = HydratedDocument<Category>;
 
@@ -21,12 +20,6 @@ export class Category {
 
   @Prop({ type: String, unique: true })
   slug: string;
-
-  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
-  createdBy: Types.ObjectId;
-
-  @Prop({ type: Types.ObjectId, ref: User.name })
-  updatedBy: Types.ObjectId;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);

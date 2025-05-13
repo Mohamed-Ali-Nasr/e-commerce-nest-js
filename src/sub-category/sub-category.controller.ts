@@ -91,7 +91,7 @@ export class SubCategoryController {
   @Delete(':id')
   @Roles(Role.Admin)
   @UseGuards(AuthGuard)
-  remove(@Param() params: ObjectIdDto) {
-    return this.subCategoryService.remove(params.id);
+  remove(@Req() req: Request, @Param() params: ObjectIdDto) {
+    return this.subCategoryService.remove(req, params.id);
   }
 }

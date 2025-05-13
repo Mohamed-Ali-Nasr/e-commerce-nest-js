@@ -82,7 +82,7 @@ export class CategoryController {
   @Delete(':id')
   @Roles(Role.Admin)
   @UseGuards(AuthGuard)
-  remove(@Param() params: ObjectIdDto) {
-    return this.categoryService.remove(params.id);
+  remove(@Req() req: Request, @Param() params: ObjectIdDto) {
+    return this.categoryService.remove(req, params.id);
   }
 }

@@ -10,6 +10,7 @@ import { CategoryModule } from './category/category.module';
 import { SubCategoryModule } from './sub-category/sub-category.module';
 import { PushNotificationModule } from './push-notification/push-notification.module';
 import { BrandModule } from './brand/brand.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -68,6 +69,8 @@ import { BrandModule } from './brand/brand.module';
     SubCategoryModule,
 
     BrandModule,
+
+    AuditLogModule,
   ],
 })
 export class AppModule {}

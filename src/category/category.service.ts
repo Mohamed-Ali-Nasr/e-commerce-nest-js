@@ -2,6 +2,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -18,6 +19,8 @@ import {
   SubCategoryDocument,
 } from 'src/sub-category/sub-category.schema';
 import { PushNotificationService } from 'src/push-notification/push-notification.service';
+import { AuditLog, AuditLogDocument } from 'src/audit-log/audit-log.schema';
+import { Action, EntityTye } from 'src/audit-log/enum';
 
 @Injectable()
 export class CategoryService {
@@ -27,6 +30,9 @@ export class CategoryService {
 
     @InjectModel(SubCategory.name)
     private subCategoryModel: Model<SubCategoryDocument>,
+
+    @InjectModel(AuditLog.name)
+    private auditLogModel: Model<AuditLogDocument>,
 
     private pushNotificationService: PushNotificationService,
   ) {}
@@ -48,12 +54,7 @@ export class CategoryService {
       throw new HttpException('Category already exist', 400);
     }
 
-    const newCategory = await (
-      await this.categoryModel.create({
-        ...createCategoryDto,
-        createdBy: payload._id,
-      })
-    ).populate('createdBy', '_id name email role');
+    const newCategory = await this.categoryModel.create(createCategoryDto);
 
     const savedCategory = await newCategory.save();
 
@@ -70,6 +71,15 @@ export class CategoryService {
         error,
       );
     }
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.Category,
+      entityId: savedCategory._id,
+      action: Action.Create,
+      performedBy: payload._id,
+      data: savedCategory.toObject(),
+    });
 
     return {
       status: 200,
@@ -178,11 +188,20 @@ export class CategoryService {
         { ...updateCategoryDto, updatedBy: payload._id },
         { new: true },
       )
-      .select('-__v')
-      .populate([
-        { path: 'updatedBy', select: '_id name email role' },
-        { path: 'createdBy', select: '_id name email role' },
-      ]);
+      .select('-__v');
+
+    if (!updatedCategory) {
+      throw new InternalServerErrorException('Failed to update category');
+    }
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.Category,
+      entityId: id,
+      action: Action.Update,
+      performedBy: payload._id,
+      data: updatedCategory.toObject(),
+    });
 
     return {
       status: 200,
@@ -192,8 +211,11 @@ export class CategoryService {
   }
 
   async remove(
+    req: Request,
     categoryId: string,
   ): Promise<{ status: number; message: string }> {
+    const payload = req['user'] as { _id: string };
+
     const category = await this.categoryModel.findById(categoryId);
 
     if (!category) {
@@ -204,6 +226,15 @@ export class CategoryService {
       this.categoryModel.deleteOne({ _id: categoryId }).exec(),
       this.subCategoryModel.deleteMany({ category: categoryId }).exec(),
     ]);
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.Category,
+      entityId: categoryId,
+      action: Action.Delete,
+      performedBy: payload._id,
+      data: category.toObject(),
+    });
 
     return {
       status: 200,

@@ -2,6 +2,7 @@ import {
   ConflictException,
   HttpException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import {
@@ -16,6 +17,8 @@ import { Model } from 'mongoose';
 import { SubCategory, SubCategoryDocument } from './sub-category.schema';
 import { Request } from 'express';
 import { PushNotificationService } from 'src/push-notification/push-notification.service';
+import { AuditLog, AuditLogDocument } from 'src/audit-log/audit-log.schema';
+import { Action, EntityTye } from 'src/audit-log/enum';
 
 @Injectable()
 export class SubCategoryService {
@@ -25,6 +28,9 @@ export class SubCategoryService {
 
     @InjectModel(Category.name)
     private categoryModel: Model<CategoryDocument>,
+
+    @InjectModel(AuditLog.name)
+    private auditLogModel: Model<AuditLogDocument>,
 
     private pushNotificationService: PushNotificationService,
   ) {}
@@ -58,13 +64,9 @@ export class SubCategoryService {
     const newSubCategory = await (
       await this.subCategoryModel.create({
         ...createSubCategoryDto,
-        createdBy: payload._id,
         category: categoryIdDto.categoryId,
       })
-    ).populate([
-      { path: 'category', select: '-__v' },
-      { path: 'createdBy', select: '_id name email role' },
-    ]);
+    ).populate([{ path: 'category', select: '-__v' }]);
 
     const savedSubCategory = await newSubCategory.save();
 
@@ -73,6 +75,15 @@ export class SubCategoryService {
       'New Sub Category Added!',
       `Check out our new sub category: ${savedSubCategory.name}`,
     );
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.SubCategory,
+      entityId: savedSubCategory._id,
+      action: Action.Create,
+      performedBy: payload._id,
+      data: savedSubCategory.toObject(),
+    });
 
     return {
       status: 200,
@@ -192,11 +203,20 @@ export class SubCategoryService {
         { new: true },
       )
       .select('-__v')
-      .populate([
-        { path: 'updatedBy', select: '_id name email role' },
-        { path: 'createdBy', select: '_id name email role' },
-        { path: 'category', select: '-__v' },
-      ]);
+      .populate([{ path: 'category', select: '-__v' }]);
+
+    if (!updatedSubCategory) {
+      throw new InternalServerErrorException('Failed to update category');
+    }
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.SubCategory,
+      entityId: id,
+      action: Action.Update,
+      performedBy: payload._id,
+      data: updatedSubCategory.toObject(),
+    });
 
     return {
       status: 200,
@@ -205,7 +225,12 @@ export class SubCategoryService {
     };
   }
 
-  async remove(id: string): Promise<{ status: number; message: string }> {
+  async remove(
+    req: Request,
+    id: string,
+  ): Promise<{ status: number; message: string }> {
+    const payload = req['user'] as { _id: string };
+
     const subCategory = await this.subCategoryModel.findById(id);
 
     if (!subCategory) {
@@ -213,6 +238,15 @@ export class SubCategoryService {
     }
 
     await this.subCategoryModel.findByIdAndDelete(id);
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.SubCategory,
+      entityId: id,
+      action: Action.Delete,
+      performedBy: payload._id,
+      data: subCategory.toObject(),
+    });
 
     return {
       status: 200,

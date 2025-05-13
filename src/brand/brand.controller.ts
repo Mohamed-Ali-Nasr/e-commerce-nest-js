@@ -78,7 +78,7 @@ export class BrandController {
   @Delete(':id')
   @Roles(Role.Admin)
   @UseGuards(AuthGuard)
-  remove(@Param() params: ObjectIdDto) {
-    return this.brandService.remove(params.id);
+  remove(@Req() req: Request, @Param() params: ObjectIdDto) {
+    return this.brandService.remove(req, params.id);
   }
 }

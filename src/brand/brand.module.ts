@@ -4,10 +4,14 @@ import { BrandController } from './brand.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Brand, BrandSchema } from './brand.schema';
 import { PushNotificationModule } from 'src/push-notification/push-notification.module';
+import { AuditLog, AuditLogSchema } from 'src/audit-log/audit-log.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Brand.name, schema: BrandSchema }]),
+    MongooseModule.forFeature([
+      { name: Brand.name, schema: BrandSchema },
+      { name: AuditLog.name, schema: AuditLogSchema },
+    ]),
 
     PushNotificationModule,
   ],
