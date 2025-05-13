@@ -1,4 +1,9 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   CategoryIdDto,
   CreateSubCategoryDto,
@@ -146,7 +151,7 @@ export class SubCategoryService {
   async update(
     req: Request,
     id: string,
-    updateCategoryDto: UpdateSubCategoryDto,
+    updateSubCategoryDto: UpdateSubCategoryDto,
   ): Promise<{ status: number; message: string; data: SubCategory }> {
     const payload = req['user'] as { _id: string };
 
@@ -155,10 +160,35 @@ export class SubCategoryService {
       throw new NotFoundException('Sub Category not found');
     }
 
+    // update the sub category name to be capitalized
+    if (
+      updateSubCategoryDto.name &&
+      subCategory.name !==
+        updateSubCategoryDto.name
+          .trim()
+          .toLowerCase()
+          .replace(/^\w|\s\w/g, (char) => char.toUpperCase())
+    ) {
+      const existingSubCategory = await this.subCategoryModel.findOne({
+        name: updateSubCategoryDto.name
+          .trim()
+          .toLowerCase()
+          .replace(/^\w|\s\w/g, (char) => char.toUpperCase()),
+      });
+      if (existingSubCategory) {
+        throw new ConflictException('Sub Category name already exists');
+      }
+
+      updateSubCategoryDto.name = updateSubCategoryDto.name
+        .trim()
+        .toLowerCase()
+        .replace(/^\w|\s\w/g, (char) => char.toUpperCase());
+    }
+
     const updatedSubCategory = await this.subCategoryModel
       .findByIdAndUpdate(
         id,
-        { ...updateCategoryDto, updatedBy: payload._id },
+        { ...updateSubCategoryDto, updatedBy: payload._id },
         { new: true },
       )
       .select('-__v')

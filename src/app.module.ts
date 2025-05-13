@@ -9,6 +9,7 @@ import { OauthModule } from './oauth/oauth.module';
 import { CategoryModule } from './category/category.module';
 import { SubCategoryModule } from './sub-category/sub-category.module';
 import { PushNotificationModule } from './push-notification/push-notification.module';
+import { BrandModule } from './brand/brand.module';
 
 @Module({
   imports: [
@@ -60,11 +61,13 @@ import { PushNotificationModule } from './push-notification/push-notification.mo
       inject: [ConfigService],
     }),
 
+    PushNotificationModule,
+
     CategoryModule,
 
     SubCategoryModule,
 
-    PushNotificationModule,
+    BrandModule,
   ],
 })
 export class AppModule {}

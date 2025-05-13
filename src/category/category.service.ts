@@ -1,4 +1,9 @@
-import { HttpException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   CategoryPaginationDto,
   CreateCategoryDto,
@@ -140,6 +145,31 @@ export class CategoryService {
     const category = await this.categoryModel.findById(id);
     if (!category) {
       throw new NotFoundException('Category not found');
+    }
+
+    // update the category name to be capitalized
+    if (
+      updateCategoryDto.name &&
+      category.name !==
+        updateCategoryDto.name
+          .trim()
+          .toLowerCase()
+          .replace(/^\w|\s\w/g, (char) => char.toUpperCase())
+    ) {
+      const existingCategory = await this.categoryModel.findOne({
+        name: updateCategoryDto.name
+          .trim()
+          .toLowerCase()
+          .replace(/^\w|\s\w/g, (char) => char.toUpperCase()),
+      });
+      if (existingCategory) {
+        throw new ConflictException('Category name already exists');
+      }
+
+      updateCategoryDto.name = updateCategoryDto.name
+        .trim()
+        .toLowerCase()
+        .replace(/^\w|\s\w/g, (char) => char.toUpperCase());
     }
 
     const updatedCategory = await this.categoryModel
