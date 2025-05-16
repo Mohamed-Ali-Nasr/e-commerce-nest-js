@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
+import { Role } from 'src/user/enum';
 
 export type SubscriptionDocument = HydratedDocument<Subscription>;
 
@@ -13,6 +14,9 @@ export class Subscription {
     p256dh: string;
     auth: string;
   };
+
+  @Prop({ type: String, srequired: true, enum: Object.values(Role) })
+  role: string;
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(Subscription);

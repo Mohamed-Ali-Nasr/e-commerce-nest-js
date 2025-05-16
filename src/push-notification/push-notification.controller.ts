@@ -10,8 +10,11 @@ export class PushNotificationController {
 
   @Post('subscribe')
   async subscribe(
-    @Body() subscription: webPush.PushSubscription,
+    @Body() body: { subscription: webPush.PushSubscription; role: string },
   ): Promise<void> {
-    await this.pushNotificationService.storeSubscription(subscription);
+    await this.pushNotificationService.storeSubscription(
+      body.subscription,
+      body.role,
+    );
   }
 }

@@ -21,12 +21,12 @@ export class PushNotificationService {
     }
 
     webPush.setVapidDetails(subject, publicKey, privateKey);
-    console.log('WebPush configured with VAPID details');
   }
 
   // Store a new subscription
   async storeSubscription(
     subscription: webPush.PushSubscription,
+    role: string,
   ): Promise<SubscriptionDocument> {
     const existingSubscription = await this.subscriptionModel.findOne({
       endpoint: subscription.endpoint,
@@ -42,17 +42,27 @@ export class PushNotificationService {
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
       },
+      role,
     });
 
     return newSubscription.save();
   }
 
   // Send notification to all subscribers
-  async sendNotificationToAll(title: string, body: string): Promise<void> {
-    const subscriptions = await this.subscriptionModel.find().exec();
+  async sendNotificationToAll(
+    title: string,
+    body: string,
+    targetRole?: string,
+  ): Promise<void> {
+    const query = targetRole ? { role: targetRole } : {};
+
+    const subscriptions = await this.subscriptionModel.find(query).exec();
 
     if (subscriptions.length === 0) {
-      console.warn('No subscriptions to send notifications to');
+      console.warn(
+        'PushNotificationService: No subscriptions to send notifications to for role:',
+        targetRole || 'all',
+      );
       return;
     }
 
