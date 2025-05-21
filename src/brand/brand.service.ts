@@ -13,12 +13,16 @@ import { Model } from 'mongoose';
 import { PushNotificationService } from 'src/push-notification/push-notification.service';
 import { AuditLog, AuditLogDocument } from 'src/audit-log/audit-log.schema';
 import { Action, EntityTye } from 'src/audit-log/enum';
+import { Product, productDocument } from 'src/product/product.schema';
 
 @Injectable()
 export class BrandService {
   constructor(
     @InjectModel(Brand.name)
     private brandModel: Model<BrandDocument>,
+
+    @InjectModel(Product.name)
+    private productModel: Model<productDocument>,
 
     @InjectModel(AuditLog.name)
     private auditLogModel: Model<AuditLogDocument>,
@@ -172,15 +176,11 @@ export class BrandService {
     }
 
     const updatedBrand = await this.brandModel
-      .findByIdAndUpdate(
-        id,
-        { ...updateBrandDto, updatedBy: payload._id },
-        { new: true },
-      )
+      .findByIdAndUpdate(id, updateBrandDto, { new: true })
       .select('-__v');
 
     if (!updatedBrand) {
-      throw new InternalServerErrorException('Failed to update category');
+      throw new InternalServerErrorException('Failed to update brand');
     }
 
     // Log the action in the audit log
@@ -211,7 +211,10 @@ export class BrandService {
       throw new NotFoundException('Brand not found');
     }
 
-    await this.brandModel.findByIdAndDelete(id);
+    await Promise.all([
+      this.brandModel.deleteOne({ _id: id }).exec(),
+      this.productModel.deleteMany({ brand: id }).exec(),
+    ]);
 
     // Log the action in the audit log
     await this.auditLogModel.create({

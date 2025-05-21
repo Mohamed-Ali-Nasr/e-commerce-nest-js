@@ -19,6 +19,7 @@ import { Request } from 'express';
 import { PushNotificationService } from 'src/push-notification/push-notification.service';
 import { AuditLog, AuditLogDocument } from 'src/audit-log/audit-log.schema';
 import { Action, EntityTye } from 'src/audit-log/enum';
+import { Product, productDocument } from 'src/product/product.schema';
 
 @Injectable()
 export class SubCategoryService {
@@ -28,6 +29,9 @@ export class SubCategoryService {
 
     @InjectModel(Category.name)
     private categoryModel: Model<CategoryDocument>,
+
+    @InjectModel(Product.name)
+    private productModel: Model<productDocument>,
 
     @InjectModel(AuditLog.name)
     private auditLogModel: Model<AuditLogDocument>,
@@ -197,16 +201,12 @@ export class SubCategoryService {
     }
 
     const updatedSubCategory = await this.subCategoryModel
-      .findByIdAndUpdate(
-        id,
-        { ...updateSubCategoryDto, updatedBy: payload._id },
-        { new: true },
-      )
+      .findByIdAndUpdate(id, updateSubCategoryDto, { new: true })
       .select('-__v')
       .populate([{ path: 'category', select: '-__v' }]);
 
     if (!updatedSubCategory) {
-      throw new InternalServerErrorException('Failed to update category');
+      throw new InternalServerErrorException('Failed to update sub category');
     }
 
     // Log the action in the audit log
@@ -237,7 +237,10 @@ export class SubCategoryService {
       throw new NotFoundException('Sub Category not found');
     }
 
-    await this.subCategoryModel.findByIdAndDelete(id);
+    await Promise.all([
+      this.subCategoryModel.deleteOne({ _id: id }).exec(),
+      this.productModel.deleteMany({ subCategory: id }).exec(),
+    ]);
 
     // Log the action in the audit log
     await this.auditLogModel.create({

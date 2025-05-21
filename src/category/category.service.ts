@@ -21,6 +21,7 @@ import {
 import { PushNotificationService } from 'src/push-notification/push-notification.service';
 import { AuditLog, AuditLogDocument } from 'src/audit-log/audit-log.schema';
 import { Action, EntityTye } from 'src/audit-log/enum';
+import { Product, productDocument } from 'src/product/product.schema';
 
 @Injectable()
 export class CategoryService {
@@ -30,6 +31,9 @@ export class CategoryService {
 
     @InjectModel(SubCategory.name)
     private subCategoryModel: Model<SubCategoryDocument>,
+
+    @InjectModel(Product.name)
+    private productModel: Model<productDocument>,
 
     @InjectModel(AuditLog.name)
     private auditLogModel: Model<AuditLogDocument>,
@@ -183,11 +187,7 @@ export class CategoryService {
     }
 
     const updatedCategory = await this.categoryModel
-      .findByIdAndUpdate(
-        id,
-        { ...updateCategoryDto, updatedBy: payload._id },
-        { new: true },
-      )
+      .findByIdAndUpdate(id, updateCategoryDto, { new: true })
       .select('-__v');
 
     if (!updatedCategory) {
@@ -225,6 +225,7 @@ export class CategoryService {
     await Promise.all([
       this.categoryModel.deleteOne({ _id: categoryId }).exec(),
       this.subCategoryModel.deleteMany({ category: categoryId }).exec(),
+      this.productModel.deleteMany({ category: categoryId }).exec(),
     ]);
 
     // Log the action in the audit log

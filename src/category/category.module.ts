@@ -9,12 +9,14 @@ import {
 } from 'src/sub-category/sub-category.schema';
 import { PushNotificationModule } from 'src/push-notification/push-notification.module';
 import { AuditLog, AuditLogSchema } from 'src/audit-log/audit-log.schema';
+import { Product, ProductSchema } from 'src/product/product.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Category.name, schema: CategorySchema },
       { name: SubCategory.name, schema: SubCategorySchema },
+      { name: Product.name, schema: ProductSchema },
       { name: AuditLog.name, schema: AuditLogSchema },
     ]),
 

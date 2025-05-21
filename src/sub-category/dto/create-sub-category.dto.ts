@@ -1,6 +1,7 @@
 import {
   IsIn,
   IsMongoId,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -14,12 +15,14 @@ export class CreateSubCategoryDto {
   @IsString({ message: 'name must be a string' })
   @MinLength(3, { message: 'name must be at least 3 characters' })
   @MaxLength(30, { message: 'name must be at most 30 characters' })
+  @IsNotEmpty({ message: 'name must not be empty' })
   name: string;
 }
 
 export class CategoryIdDto {
   @IsString({ message: 'categoryId must be a string' })
   @IsMongoId({ message: 'categoryId must be a valid mongo id' })
+  @IsNotEmpty({ message: 'categoryId must not be empty' })
   categoryId: string;
 }
 
