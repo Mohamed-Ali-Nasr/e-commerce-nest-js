@@ -27,6 +27,7 @@ export class PushNotificationService {
   async storeSubscription(
     subscription: webPush.PushSubscription,
     role: string,
+    userId: string,
   ): Promise<SubscriptionDocument> {
     const existingSubscription = await this.subscriptionModel.findOne({
       endpoint: subscription.endpoint,
@@ -43,6 +44,7 @@ export class PushNotificationService {
         auth: subscription.keys.auth,
       },
       role,
+      userId,
     });
 
     return newSubscription.save();
@@ -53,14 +55,21 @@ export class PushNotificationService {
     title: string,
     body: string,
     targetRole?: string,
+    targetUserIds?: string[],
   ): Promise<void> {
-    const query = targetRole ? { role: targetRole } : {};
-
+    const query = {
+      ...(targetUserIds && targetUserIds.length > 0
+        ? { userId: { $in: targetUserIds } }
+        : {}),
+      ...(targetRole ? { role: targetRole } : {}),
+    };
     const subscriptions = await this.subscriptionModel.find(query).exec();
 
     if (subscriptions.length === 0) {
       console.warn(
-        'PushNotificationService: No subscriptions to send notifications to for role:',
+        'PushNotificationService: No subscriptions to send notifications to for userIds:',
+        targetUserIds || 'all',
+        'role:',
         targetRole || 'all',
       );
       return;

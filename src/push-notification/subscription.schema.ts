@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema } from 'mongoose';
 import { Role } from 'src/user/enum';
+import { User } from 'src/user/user.schema';
 
 export type SubscriptionDocument = HydratedDocument<Subscription>;
 
@@ -15,8 +16,11 @@ export class Subscription {
     auth: string;
   };
 
-  @Prop({ type: String, srequired: true, enum: Object.values(Role) })
+  @Prop({ type: String, required: true, enum: Object.values(Role) })
   role: string;
+
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: User.name, required: true })
+  userId: MongooseSchema.Types.ObjectId;
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(Subscription);

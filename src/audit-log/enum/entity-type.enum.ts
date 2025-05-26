@@ -3,4 +3,5 @@ export enum EntityTye {
   SubCategory = 'sub-category',
   Brand = 'brand',
   Product = 'product',
+  Coupon = 'coupon',
 }

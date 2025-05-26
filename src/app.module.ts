@@ -12,6 +12,7 @@ import { PushNotificationModule } from './push-notification/push-notification.mo
 import { BrandModule } from './brand/brand.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { ProductModule } from './product/product.module';
+import { CouponModule } from './coupon/coupon.module';
 
 @Module({
   imports: [
@@ -74,6 +75,8 @@ import { ProductModule } from './product/product.module';
     AuditLogModule,
 
     ProductModule,
+
+    CouponModule,
   ],
 })
 export class AppModule {}

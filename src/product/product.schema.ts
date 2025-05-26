@@ -31,7 +31,7 @@ export class Product {
     type: Number,
     required: true,
     default: 1,
-    min: [1, 'Description must be at least 1 product'],
+    min: [1, 'Quantity must be at least 1 product'],
   })
   quantity: number;
 
@@ -48,7 +48,7 @@ export class Product {
     type: Number,
     required: true,
     min: [1, 'Price must be at least 1 L.E'],
-    max: [20000, 'Price must be at least 20000 L.E'],
+    max: [20000, 'Price must be at most 20000 L.E'],
   })
   price: number;
 
