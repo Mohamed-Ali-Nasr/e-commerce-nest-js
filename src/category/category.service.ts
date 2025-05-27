@@ -45,7 +45,7 @@ export class CategoryService {
     req: Request,
     createCategoryDto: CreateCategoryDto,
   ): Promise<{ status: number; message: string; data: Category }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const category = await this.categoryModel.findOne({
       name: createCategoryDto.name
@@ -61,6 +61,10 @@ export class CategoryService {
     const newCategory = await this.categoryModel.create(createCategoryDto);
 
     const savedCategory = await newCategory.save();
+
+    if (!savedCategory) {
+      throw new InternalServerErrorException('Failed to create category');
+    }
 
     // Send notification to all users
     try {
@@ -83,6 +87,7 @@ export class CategoryService {
       action: Action.Create,
       performedBy: payload._id,
       data: savedCategory.toObject(),
+      description: `Category ${savedCategory.name} created by admin ${payload.name}`,
     });
 
     return {
@@ -154,7 +159,7 @@ export class CategoryService {
     id: string,
     updateCategoryDto: UpdateCategoryDto,
   ): Promise<{ status: number; message: string; data: Category }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const category = await this.categoryModel.findById(id);
     if (!category) {
@@ -201,6 +206,7 @@ export class CategoryService {
       action: Action.Update,
       performedBy: payload._id,
       data: updatedCategory.toObject(),
+      description: `Category ${updatedCategory.name} updated by admin ${payload.name}`,
     });
 
     return {
@@ -214,7 +220,7 @@ export class CategoryService {
     req: Request,
     categoryId: string,
   ): Promise<{ status: number; message: string }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const category = await this.categoryModel.findById(categoryId);
 
@@ -235,6 +241,7 @@ export class CategoryService {
       action: Action.Delete,
       performedBy: payload._id,
       data: category.toObject(),
+      description: `Category ${category.name} deleted by admin ${payload.name}`,
     });
 
     return {

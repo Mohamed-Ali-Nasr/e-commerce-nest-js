@@ -34,7 +34,7 @@ export class BrandService {
     req: Request,
     createBrandDto: CreateBrandDto,
   ): Promise<{ status: number; message: string; data: Brand }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const brand = await this.brandModel.findOne({
       name: createBrandDto.name
@@ -50,6 +50,10 @@ export class BrandService {
     const newBrnad = await this.brandModel.create(createBrandDto);
 
     const savedBrand = await newBrnad.save();
+
+    if (!savedBrand) {
+      throw new InternalServerErrorException('Failed to create brand');
+    }
 
     // Send notification to all users
     try {
@@ -72,6 +76,7 @@ export class BrandService {
       action: Action.Create,
       performedBy: payload._id,
       data: savedBrand.toObject(),
+      description: `Brand ${savedBrand.name} created by admin ${payload.name}`,
     });
 
     return {
@@ -143,7 +148,7 @@ export class BrandService {
     id: string,
     updateBrandDto: UpdateBrandDto,
   ): Promise<{ status: number; message: string; data: Brand }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const brand = await this.brandModel.findById(id);
     if (!brand) {
@@ -190,6 +195,7 @@ export class BrandService {
       action: Action.Update,
       performedBy: payload._id,
       data: updatedBrand.toObject(),
+      description: `Brand ${updatedBrand.name} updated by admin ${payload.name}`,
     });
 
     return {
@@ -203,7 +209,7 @@ export class BrandService {
     req: Request,
     id: string,
   ): Promise<{ status: number; message: string }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const brand = await this.brandModel.findById(id);
 
@@ -223,6 +229,7 @@ export class BrandService {
       action: Action.Delete,
       performedBy: payload._id,
       data: brand.toObject(),
+      description: `Brand ${brand.name} deleted by admin ${payload.name}`,
     });
 
     return {

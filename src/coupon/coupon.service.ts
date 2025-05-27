@@ -33,7 +33,7 @@ export class CouponService {
     req: Request,
     createCouponDto: CreateCouponDto,
   ): Promise<{ status: number; message: string; data: Coupon }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const coupon = await this.couponModel.findOne({
       couponCode: createCouponDto.couponCode,
@@ -70,6 +70,7 @@ export class CouponService {
       action: Action.Create,
       performedBy: payload._id,
       data: newCoupon.toObject(),
+      description: `Coupon ${newCoupon.couponCode} created by admin ${payload.name}`,
     });
 
     return {
@@ -141,7 +142,7 @@ export class CouponService {
     id: string,
     updateCouponDto: UpdateCouponDto,
   ): Promise<{ status: number; message: string; data: Coupon }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const coupon = await this.couponModel.findById(id).select('-__v');
     if (!coupon) {
@@ -167,6 +168,7 @@ export class CouponService {
       action: Action.Update,
       performedBy: payload._id,
       data: updatedCoupon.toObject(),
+      description: `Coupon ${updatedCoupon.couponCode} updated by admin ${payload.name}`,
     });
 
     return {
@@ -180,7 +182,7 @@ export class CouponService {
     req: Request,
     id: string,
   ): Promise<{ status: number; message: string }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const coupon = await this.couponModel.findOne({ _id: id, isEnable: false });
 
@@ -197,6 +199,7 @@ export class CouponService {
       action: Action.Delete,
       performedBy: payload._id,
       data: coupon.toObject(),
+      description: `Coupon ${coupon.couponCode} deleted by admin ${payload.name}`,
     });
 
     return {
@@ -209,7 +212,7 @@ export class CouponService {
     req: Request,
     id: string,
   ): Promise<{ status: number; message: string }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const coupon = await this.couponModel.findOne({ _id: id, isEnable: true });
 
@@ -234,6 +237,7 @@ export class CouponService {
       action: Action.Update,
       performedBy: payload._id,
       data: updatedCoupon.toObject(),
+      description: `Coupon ${updatedCoupon.couponCode} disabled by admin ${payload.name}`,
     });
 
     return {
@@ -247,7 +251,7 @@ export class CouponService {
     id: string,
     userId: string,
   ): Promise<{ status: number; message: string }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const coupon = await this.couponModel.findOne({
       _id: id,
@@ -278,6 +282,7 @@ export class CouponService {
       action: Action.Update,
       performedBy: payload._id,
       data: updatedCoupon.toObject(),
+      description: `User ${userId} removed from coupon ${updatedCoupon.couponCode} by admin ${payload.name}`,
     });
 
     return {

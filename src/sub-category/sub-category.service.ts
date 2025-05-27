@@ -44,7 +44,7 @@ export class SubCategoryService {
     createSubCategoryDto: CreateSubCategoryDto,
     categoryIdDto: CategoryIdDto,
   ): Promise<{ status: number; message: string; data: SubCategory }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const subCategory = await this.subCategoryModel.findOne({
       name: createSubCategoryDto.name
@@ -74,6 +74,10 @@ export class SubCategoryService {
 
     const savedSubCategory = await newSubCategory.save();
 
+    if (!savedSubCategory) {
+      throw new InternalServerErrorException('Failed to create sub category');
+    }
+
     // Send notification to all users
     await this.pushNotificationService.sendNotificationToAll(
       'New Sub Category Added!',
@@ -87,6 +91,7 @@ export class SubCategoryService {
       action: Action.Create,
       performedBy: payload._id,
       data: savedSubCategory.toObject(),
+      description: `Sub Category ${savedSubCategory.name} created by admin ${payload.name}`,
     });
 
     return {
@@ -168,7 +173,7 @@ export class SubCategoryService {
     id: string,
     updateSubCategoryDto: UpdateSubCategoryDto,
   ): Promise<{ status: number; message: string; data: SubCategory }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const subCategory = await this.subCategoryModel.findById(id);
     if (!subCategory) {
@@ -216,6 +221,7 @@ export class SubCategoryService {
       action: Action.Update,
       performedBy: payload._id,
       data: updatedSubCategory.toObject(),
+      description: `Sub Category ${updatedSubCategory.name} updated by admin ${payload.name}`,
     });
 
     return {
@@ -229,7 +235,7 @@ export class SubCategoryService {
     req: Request,
     id: string,
   ): Promise<{ status: number; message: string }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const subCategory = await this.subCategoryModel.findById(id);
 
@@ -249,6 +255,7 @@ export class SubCategoryService {
       action: Action.Delete,
       performedBy: payload._id,
       data: subCategory.toObject(),
+      description: `Sub Category ${subCategory.name} deleted by admin ${payload.name}`,
     });
 
     return {

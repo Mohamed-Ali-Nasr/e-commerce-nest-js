@@ -29,6 +29,9 @@ export class AuditLog {
 
   @Prop({ type: MongooseSchema.Types.Mixed })
   data: any;
+
+  @Prop({ type: String, required: true })
+  description: string;
 }
 
 export const AuditLogSchema = SchemaFactory.createForClass(AuditLog);

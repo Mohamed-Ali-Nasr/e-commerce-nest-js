@@ -49,7 +49,7 @@ export class ProductService {
     req: Request,
     createProductDto: CreateProductDto,
   ): Promise<{ status: number; message: string; data: Product }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const product = await this.productModel.findOne({
       title: createProductDto.title
@@ -102,6 +102,10 @@ export class ProductService {
 
     const savedProduct = await newProduct.save();
 
+    if (!savedProduct) {
+      throw new InternalServerErrorException('Failed to create product');
+    }
+
     // Send notification to all users
     await this.pushNotificationService.sendNotificationToAll(
       'New Product Added!',
@@ -115,6 +119,7 @@ export class ProductService {
       action: Action.Create,
       performedBy: payload._id,
       data: savedProduct.toObject(),
+      description: `Product ${savedProduct.title} created by admin ${payload.name}`,
     });
 
     return {
@@ -204,7 +209,7 @@ export class ProductService {
     id: string,
     updateProductDto: UpdateProductDto,
   ): Promise<{ status: number; message: string; data: Product }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const product = await this.productModel.findById(id);
     if (!product) {
@@ -302,6 +307,7 @@ export class ProductService {
       action: Action.Update,
       performedBy: payload._id,
       data: updatedProduct.toObject(),
+      description: `Product ${updatedProduct.title} updated by admin ${payload.name}`,
     });
 
     return {
@@ -315,7 +321,7 @@ export class ProductService {
     req: Request,
     id: string,
   ): Promise<{ status: number; message: string }> {
-    const payload = req['user'] as { _id: string };
+    const payload = req['user'] as { _id: string; name: string };
 
     const product = await this.productModel.findById(id);
 
@@ -332,6 +338,7 @@ export class ProductService {
       action: Action.Delete,
       performedBy: payload._id,
       data: product.toObject(),
+      description: `Product ${product.title} deleted by admin ${payload.name}`,
     });
 
     return {
