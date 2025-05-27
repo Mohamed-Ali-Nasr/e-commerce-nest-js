@@ -94,4 +94,20 @@ export class CouponController {
   disableCoupon(@Req() req: Request, @Param() params: ObjectIdDto) {
     return this.couponService.disableCoupon(req, params.id);
   }
+
+  /**
+   *  @docs    Admin Can disable any user coupon by id
+   *  @Route   DELETE /api/v1/coupon/disable-user/:id
+   *  @access  Private [admin]
+   */
+  @Patch('disable-user/:id')
+  @Roles(Role.Admin)
+  @UseGuards(AuthGuard)
+  disableUserCoupon(
+    @Req() req: Request,
+    @Param() params: ObjectIdDto,
+    @Body() body: { userId: string },
+  ) {
+    return this.couponService.removeUserFromCoupon(req, params.id, body.userId);
+  }
 }

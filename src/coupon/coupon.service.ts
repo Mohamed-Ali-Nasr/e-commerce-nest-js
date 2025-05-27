@@ -9,7 +9,7 @@ import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { PushNotificationService } from 'src/push-notification/push-notification.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { AuditLog, AuditLogDocument } from 'src/audit-log/audit-log.schema';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Coupon, couponDocument } from './coupon.schema';
 import { Action, EntityTye } from 'src/audit-log/enum';
 import { User, UserDocument } from 'src/user/user.schema';
@@ -44,7 +44,6 @@ export class CouponService {
 
     // check if userIds in users list are include in user model
     const userIds = createCouponDto.users.map((u) => u.userId);
-    console.log('🚀 ~ CouponService ~ userIds:', userIds);
     const validUsers = await this.userModel.find({ _id: { $in: userIds } });
     if (userIds.length !== validUsers.length) {
       throw new HttpException('Some user IDs are invalid or do not exist', 400);
@@ -224,6 +223,10 @@ export class CouponService {
       { new: true },
     );
 
+    if (!updatedCoupon) {
+      throw new InternalServerErrorException('Failed to disable coupon');
+    }
+
     // Log the action in the audit log
     await this.auditLogModel.create({
       entityType: EntityTye.Coupon,
@@ -236,6 +239,50 @@ export class CouponService {
     return {
       status: 200,
       message: 'Coupon disabled successfully',
+    };
+  }
+
+  async removeUserFromCoupon(
+    req: Request,
+    id: string,
+    userId: string,
+  ): Promise<{ status: number; message: string }> {
+    const payload = req['user'] as { _id: string };
+
+    const coupon = await this.couponModel.findOne({
+      _id: id,
+      isEnable: true,
+      'users.userId': new Types.ObjectId(userId),
+    });
+
+    if (!coupon) {
+      throw new NotFoundException('coupon of user not found');
+    }
+
+    const updatedCoupon = await this.couponModel.findByIdAndUpdate(
+      id,
+      { $pull: { users: { userId } } },
+      { new: true },
+    );
+
+    if (!updatedCoupon) {
+      throw new InternalServerErrorException(
+        'Failed to remove user from coupon',
+      );
+    }
+
+    // Log the action in the audit log
+    await this.auditLogModel.create({
+      entityType: EntityTye.Coupon,
+      entityId: id,
+      action: Action.Update,
+      performedBy: payload._id,
+      data: updatedCoupon.toObject(),
+    });
+
+    return {
+      status: 200,
+      message: 'User Coupon removed successfully',
     };
   }
 }

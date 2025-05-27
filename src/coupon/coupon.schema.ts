@@ -39,6 +39,7 @@ export class Coupon {
         },
         maxCount: { type: Number, required: true, default: 0 },
         usageCount: { type: Number, required: true, default: 0 },
+        disabled: { type: Boolean, default: false },
       },
     ],
     required: true,
@@ -48,6 +49,7 @@ export class Coupon {
       userId: MongooseSchema.Types.ObjectId;
       maxCount: number;
       usageCount: number;
+      disabled: boolean;
     },
   ];
 }
