@@ -14,6 +14,7 @@ import { AuditLogModule } from './audit-log/audit-log.module';
 import { ProductModule } from './product/product.module';
 import { CouponModule } from './coupon/coupon.module';
 import { UploadFilesModule } from './upload-files/upload-files.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -80,6 +81,8 @@ import { UploadFilesModule } from './upload-files/upload-files.module';
     CouponModule,
 
     UploadFilesModule,
+
+    WishlistModule,
   ],
 })
 export class AppModule {}
