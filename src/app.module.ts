@@ -15,6 +15,7 @@ import { ProductModule } from './product/product.module';
 import { CouponModule } from './coupon/coupon.module';
 import { UploadFilesModule } from './upload-files/upload-files.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -83,6 +84,8 @@ import { WishlistModule } from './wishlist/wishlist.module';
     UploadFilesModule,
 
     WishlistModule,
+
+    CartModule,
   ],
 })
 export class AppModule {}
