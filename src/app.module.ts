@@ -16,6 +16,8 @@ import { CouponModule } from './coupon/coupon.module';
 import { UploadFilesModule } from './upload-files/upload-files.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { CartModule } from './cart/cart.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { TasksModule } from './tasks/tasks.module';
 
 @Module({
   imports: [
@@ -80,6 +82,10 @@ import { CartModule } from './cart/cart.module';
     ProductModule,
 
     CouponModule,
+
+    ScheduleModule.forRoot(),
+
+    TasksModule,
 
     UploadFilesModule,
 
